@@ -162,9 +162,16 @@ func ExtractMeta(data []byte, spaceFromCli string, titleFromH1 bool, parents []s
 		}
 	}
 
+	files := ExtractDocumentFiles(data)
+
 	if meta == nil {
-		return nil, data, nil
+		if len(files) == 0 {
+			return nil, data, nil
+		}
+		meta = &Meta{}
 	}
+
+	meta.Attachments = append(meta.Attachments, files...)
 
 	// Prepend parent pages that are defined via the cli flag
 	if len(parents) > 0 && parents[0] != "" {
@@ -196,4 +203,21 @@ func ExtractDocumentLeadingH1(markdown []byte) string {
 	} else {
 		return string(groups[1])
 	}
+}
+
+func ExtractDocumentFiles(markdown []byte) []string {
+	img := regexp.MustCompile(`!\[\[([^\]]+)\]\]`)
+	groups := img.FindAllSubmatch(markdown, len(markdown))
+
+	files := make(map[string]int, len(groups))
+	for _, group := range groups {
+		files[string(group[1])] = 0
+	}
+
+	fileList := make([]string, 0, len(files))
+	for k := range files {
+		fileList = append(fileList, k)
+	}
+
+	return fileList
 }
