@@ -11,10 +11,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kovetskiy/mark/confluence"
-	"github.com/kovetskiy/mark/vfs"
 	"github.com/reconquest/karma-go"
 	"github.com/reconquest/pkg/log"
+
+	"github.com/kovetskiy/mark/confluence"
+	"github.com/kovetskiy/mark/vfs"
 )
 
 const (
@@ -222,10 +223,10 @@ func CompileAttachmentLinks(markdown []byte, attachments []Attachment) []byte {
 	links := map[string]string{}
 	replaces := []string{}
 
-	for _, attachment := range attachments {
-		links[attachment.Replace] = parseAttachmentLink(attachment.Link)
-		replaces = append(replaces, attachment.Replace)
-	}
+	// for _, attachment := range attachments {
+	// 	links[attachment.Replace] = parseAttachmentLink(attachment.Link)
+	// 	replaces = append(replaces, attachment.Replace)
+	// }
 
 	// sort by length so first items will have bigger length
 	// it's helpful for replacing in case of following names
