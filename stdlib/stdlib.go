@@ -4,11 +4,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kovetskiy/mark/confluence"
-	"github.com/kovetskiy/mark/macro"
+	"github.com/reconquest/karma-go"
 	"github.com/reconquest/pkg/log"
 
-	"github.com/reconquest/karma-go"
+	"github.com/kovetskiy/mark/confluence"
+	"github.com/kovetskiy/mark/macro"
 )
 
 type Lib struct {
@@ -449,6 +449,14 @@ func templates(api *confluence.API) (*template.Template, error) {
 			`<ri:attachment ri:filename="{{ .Name | convertAttachment }}"/>`,
 			`</ac:parameter>`,
 			`<ac:parameter ac:name="autoplay">{{ or .AutoPlay "false"}}</ac:parameter>`,
+			`</ac:structured-macro>`,
+		),
+
+		`ac:view-file`: text(
+			`<ac:structured-macro ac:name="view-file">`,
+			`<ac:parameter ac:name="name">`,
+			`<ri:attachment ri:filename="{{ .Attachment | convertAttachment }}"/>`,
+			`</ac:parameter>`,
 			`</ac:structured-macro>`,
 		),
 
