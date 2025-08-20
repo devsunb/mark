@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"net/url"
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/reconquest/karma-go"
@@ -211,12 +216,22 @@ func prepareAttachment(opener vfs.Opener, base, name string) (Attachment, error)
 		return Attachment{}, karma.Format(err, "unable to read file: %q", attachmentPath)
 	}
 
-	return Attachment{
+	var width, height string
+	if config, _, err := image.DecodeConfig(bytes.NewReader(fileBytes)); err == nil {
+		width = strconv.Itoa(config.Width)
+		height = strconv.Itoa(config.Height)
+	}
+
+	attachment := Attachment{
 		Name:      name,
 		Filename:  strings.ReplaceAll(name, "/", "_"),
 		FileBytes: fileBytes,
+		Width:     width,
+		Height:    height,
 		Replace:   name,
-	}, nil
+	}
+
+	return attachment, nil
 }
 
 func CompileAttachmentLinks(markdown []byte, attachments []Attachment) []byte {
