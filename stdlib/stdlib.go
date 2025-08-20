@@ -236,7 +236,7 @@ func templates(api *confluence.API) (*template.Template, error) {
 
 		`ac:image`: text(
 			`<ac:image`,
-			`{{ if .Width }} ac:width="{{ .Width }}"{{ end }}`,
+			`{{ if .Width }} ac:custom-width="true" ac:width="{{ .Width }}"{{ end }}`,
 			`{{ if .Height }} ac:height="{{ .Height }}"{{ end }}`,
 			`{{ if .Title }} ac:title="{{ .Title }}"{{ end }}`,
 			`{{ if .Alt }} ac:alt="{{ .Alt }}"{{ end }}>`,

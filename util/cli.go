@@ -175,6 +175,14 @@ func processFile(
 		}
 	}
 
+	// Resolve attachments created from <!-- Attachment: --> directive early
+	// so they are available to macros
+	localAttachments, err := attachment.ResolveLocalAttachments(vfs.LocalOS, filepath.Dir(file), meta.Attachments)
+	if err != nil {
+		fatalErrorHandler.Handle(err, "unable to locate attachments")
+		return nil
+	}
+
 	macros, markdown, err := macro.ExtractMacros(
 		filepath.Dir(file),
 		cmd.String("include-path"),
@@ -189,7 +197,7 @@ func processFile(
 	macros = append(macros, stdlib.Macros...)
 
 	for _, macro := range macros {
-		markdown, err = macro.Apply(markdown)
+		markdown, err = macro.Apply(markdown, localAttachments)
 		if err != nil {
 			fatalErrorHandler.Handle(err, "unable to apply macro")
 			return nil
@@ -272,13 +280,6 @@ func processFile(
 		}
 
 		target = page
-	}
-
-	// Resolve attachments created from <!-- Attachment: --> directive
-	localAttachments, err := attachment.ResolveLocalAttachments(vfs.LocalOS, filepath.Dir(file), meta.Attachments)
-	if err != nil {
-		fatalErrorHandler.Handle(err, "unable to locate attachments")
-		return nil
 	}
 
 	attaches, err := attachment.ResolveAttachments(

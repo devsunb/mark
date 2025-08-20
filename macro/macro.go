@@ -7,11 +7,13 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kovetskiy/mark/includes"
 	"github.com/reconquest/karma-go"
 	"github.com/reconquest/pkg/log"
 	"github.com/reconquest/regexputil-go"
 	"gopkg.in/yaml.v3"
+
+	"github.com/kovetskiy/mark/attachment"
+	"github.com/kovetskiy/mark/includes"
 )
 
 var reMacroDirective = regexp.MustCompile(
@@ -33,6 +35,7 @@ type Macro struct {
 
 func (macro *Macro) Apply(
 	content []byte,
+	attachments []attachment.Attachment,
 ) ([]byte, error) {
 	var err error
 
@@ -54,6 +57,7 @@ func (macro *Macro) Apply(
 			err = macro.Template.Execute(&buffer, macro.configure(
 				config,
 				macro.Regexp.FindSubmatch(match),
+				attachments,
 			))
 			if err != nil {
 				err = karma.Format(
@@ -69,23 +73,26 @@ func (macro *Macro) Apply(
 	return content, err
 }
 
-func (macro *Macro) configure(node interface{}, groups [][]byte) interface{} {
+func (macro *Macro) configure(node interface{}, groups [][]byte, attachments []attachment.Attachment) interface{} {
 	switch node := node.(type) {
 	case map[interface{}]interface{}:
 		for key, value := range node {
-			node[key] = macro.configure(value, groups)
+			node[key] = macro.configure(value, groups, attachments)
 		}
 
 		return node
 	case map[string]interface{}:
 		for key, value := range node {
-			node[key] = macro.configure(value, groups)
+			node[key] = macro.configure(value, groups, attachments)
 		}
+
+		// Special handling for ac:image template - auto-populate width/height from attachment
+		macro.populateAttachmentDimensions(node, attachments)
 
 		return node
 	case []interface{}:
 		for key, value := range node {
-			node[key] = macro.configure(value, groups)
+			node[key] = macro.configure(value, groups, attachments)
 		}
 
 		return node
@@ -206,4 +213,35 @@ func ExtractMacros(
 	)
 
 	return macros, contents, err
+}
+
+// populateAttachmentDimensions auto-populates Width and Height from attachment metadata
+// when they are not specified in the config but an Attachment is specified
+func (macro *Macro) populateAttachmentDimensions(config map[string]interface{}, attachments []attachment.Attachment) {
+	// Only proceed if this is for an attachment-based template
+	attachmentPath, hasAttachment := config["Attachment"].(string)
+	if !hasAttachment || attachmentPath == "" {
+		return
+	}
+
+	// Only populate if Width is not already specified
+	if _, hasWidth := config["Width"]; hasWidth {
+		return
+	}
+
+	// Create a map for fast lookup
+	attachmentMap := make(map[string]attachment.Attachment)
+	for _, att := range attachments {
+		// Store both original name and filename (with slashes replaced)
+		attachmentMap[att.Name] = att
+		attachmentMap[att.Filename] = att
+	}
+
+	// Look up the attachment
+	if att, found := attachmentMap[attachmentPath]; found && att.Width != "" {
+		config["Width"] = att.Width
+		if att.Height != "" {
+			config["Height"] = att.Height
+		}
+	}
 }
